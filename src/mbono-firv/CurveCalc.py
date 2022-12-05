@@ -14,6 +14,7 @@ import sqlite3
 ###GLOBALS FOR MEX MARKET
 CONVENTION = ql.Unadjusted
 CALENDAR = ql.Mexico()
+YIELD_BASIS = ql.Semiannual
 TENOR = ql.Period(ql.Semiannual)
 RULE = ql.DateGeneration.Backward
 DAY_COUNT = ql.Actual360()
@@ -83,6 +84,14 @@ def mbono_market_snapshot(df_input, valuation_date = ql.Date.todaysDate(),
                  id_type = 'BBGID'):
     df_output = df_input.copy()
     instrument_ids = list(df_input.index)
+    str_ids = '('+str(instrument_ids)[1:-1]+')'
+    con = sqlite3.connect("../../db/MBONOdata.db")
+    query = """SELECT %s, Name, PricingDate, Maturity
+    FROM Instruments  WHERE %s in %s;""" %(id_type, id_type, str_ids)
+    df_output = df_output.join(
+        pd.read_sql_query(
+            query, con, parse_dates = ['PricingDate', 'Maturity'], index_col =
+            id_type))
     settlement_date = CALENDAR.advance(valuation_date, 
                                        ql.Period(SETTLEMENT_DAYS, ql.Days))
     bonds_sample = define_ql_bonds_bulk(instrument_ids, id_type = id_type)
@@ -92,7 +101,7 @@ def mbono_market_snapshot(df_input, valuation_date = ql.Date.todaysDate(),
         df_output.loc[b, 'Yield'] = bond.bondYield(df_output.loc[b, 'Price'],
                                                     DAY_COUNT, 
                                                     ql.Compounded, 
-                                                    ql.Semiannual, 
+                                                    YIELD_BASIS, 
                                                    settlement_date)
     return df_output
 
@@ -101,6 +110,7 @@ def fit_to_data (df_input, valuation_date = ql.Date.todaysDate()):
     bonds_sample = list(df_input['QL bond'])
     yield_curve_fit = fitted_ql_curve(bonds_sample, prices, valuation_date = 
                                       valuation_date)
+    yield_curve_fit.enableExtrapolation()
     return yield_curve_fit
 
 def evaluate_bonds (df_input, yield_curve_fit, 
@@ -118,23 +128,29 @@ def evaluate_bonds (df_input, yield_curve_fit,
             settlement_date)
         df_output.loc[b, 'Accrued'] = bond.accruedAmount(settlement_date)
         df_output.loc[b, 'Th Yield'] = bond.bondYield(
-            df_output.loc[b, 'Th Price'], ql.Actual360(), ql.Compounded, 
-            ql.Semiannual)
+            df_output.loc[b, 'Th Price'], DAY_COUNT, ql.Compounded, 
+            YIELD_BASIS)
     df_output['Difference'] = df_output['Yield'] - df_output['Th Yield']
     return df_output
 
-def clean_fit(df_input, valuation_date = ql.Date.todaysDate()):
-    df_output = df_input.copy()
+def clean_fit(df_input, valuation_date = ql.Date.todaysDate(), min_days = 
+              270, outlier_range = 0.001):
+    df_input = df_input[(df_input['PricingDate'].apply(
+        ql.Date().from_date) - valuation_date) < 0].copy()
+    df_input = df_input[(df_input['Maturity'].apply(
+        ql.Date().from_date) - valuation_date) > 0].copy()
+    df_output = df_input[(df_input['Maturity'].apply(ql.Date().from_date) - 
+                          valuation_date) > min_days].copy()
     while True:
         yield_curve_fit = fit_to_data(df_output, 
                                       valuation_date = valuation_date)
         df_output = evaluate_bonds(df_output, yield_curve_fit,
                                    valuation_date = valuation_date)
-        if df_output['Difference'].abs().max() <= 0.001:
+        if df_output['Difference'].abs().max() <= outlier_range:
             break
         else:
             df_output = df_output.drop(
-                df_output[df_output['Difference'].abs()>0.001].index)
+                df_output[df_output['Difference'].abs()> outlier_range].index)
     df_output = evaluate_bonds(df_input, yield_curve_fit,
                                    valuation_date = valuation_date)
     return yield_curve_fit, df_output
