@@ -27,7 +27,7 @@ fit_table = LiveFit.fit.sort_values(['Maturity'])[['Name', 'Maturity',
                                                    'Price', 'Yield', 
                                                    'Th Price', 'Th Yield',
                                                    'Difference']].copy()
-
+fit_table['Difference'] = 10000 * fit_table['Difference']
 
 app = dash.Dash()
 column_settings = [
@@ -40,14 +40,33 @@ column_settings = [
          format=Format(precision=2, scheme=Scheme.percentage)),
     dict(id='Th Yield', name='Th Yield', type='numeric', 
          format=Format(precision=2, scheme=Scheme.percentage)),
-    dict(id='Difference', name='Spread to Curve', type='numeric', 
-         format=Format(precision=4, scheme=Scheme.percentage))
+    dict(id='Difference', name='Spread, bp', type='numeric', 
+         format=Format(precision=0, scheme=Scheme.fixed))
     ]
 app.layout = html.Div(children = [
     html.H1(children = 'MBONO Market'),
     html.Div([dash_table.DataTable(id = 'live-market-table',
                                    columns = column_settings,
-                                   data = fit_table.to_dict('rows'))], 
+                                   data = fit_table.to_dict('rows'),
+                                                style_data_conditional=[
+                 {
+                     'if': {
+                         'filter_query': '{Difference} > 4.5',
+                         'column_id': 'Difference'
+                         },
+                     'backgroundColor': 'green',
+                     'color': 'white'
+                     },
+                 {
+                     'if': {
+                         'filter_query': '{Difference} < -4.5',
+                         'column_id': 'Difference'
+                         },
+                     'backgroundColor': 'red',
+                     'color': 'white'
+                     },
+                 ],
+                    )],
              style = {
                                                'width':'49%',
                                                'display':'inline-block',

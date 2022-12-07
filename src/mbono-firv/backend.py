@@ -13,9 +13,12 @@ import datetime as dt
 import QuantLib as ql
 import sqlite3
 
+####Global curve tenors in years
 TENORS = [1,2,3,5,10,20,30]
+####
 
 def load_agg_price_data():
+    #Loading portion of raw price data without yet calculated curves
     con = sqlite3.connect("../../../MBONOdata.db")
     query = """SELECT InstrumentID,  Date, Price FROM MarketData  
     WHERE Date NOT IN (SELECT Date FROM ZeroCurves);"""
@@ -24,10 +27,12 @@ def load_agg_price_data():
     return agg_price_data
 
 def update_tables ():
+    #Procedure updates tables with zero curves and with goodness of fit
     full_data = load_agg_price_data()
     dates_to_update = full_data['Date'].unique()
     con = sqlite3.connect("../../../MBONOdata.db")
     cur = con.cursor()
+    #Retreiving current IDs for a counter
     res = cur.execute('SELECT MAX(ZeroCurveID) FROM ZeroCurves;')
     query_output = res.fetchone()
     if query_output[0] is None: 
@@ -40,6 +45,7 @@ def update_tables ():
         DataPointID = 0 
     else: 
         DataPointID = query_output[0]
+    #Updating the tables iteratively for each date
     for d in dates_to_update[:5]:
         date = ql.Date().from_date(pd.Timestamp(d))
         date_str = pd.Timestamp(d).strftime('%Y-%m-%d')
@@ -62,8 +68,4 @@ def update_tables ():
                       residuals[InstrumentID]]
             cur.executemany(query, (vector,))
             con.commit()
-        print(date_str)
-        print(CurveID)
-        print(residuals)
-        print(zero_curve)
     return
