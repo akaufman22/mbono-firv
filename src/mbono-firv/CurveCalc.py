@@ -151,8 +151,10 @@ def clean_fit(df_input, valuation_date = ql.Date.todaysDate(), min_days =
         else:
             df_output = df_output.drop(
                 df_output[df_output['Difference'].abs()> outlier_range].index)
-    df_output = evaluate_bonds(df_input, yield_curve_fit,
+    try: df_output = evaluate_bonds(df_input, yield_curve_fit,
                                    valuation_date = valuation_date)
+    except: print('Evaluation N/A')
+    
     return yield_curve_fit, df_output
 
 def zero_df_curve (yield_curve, tenors, 
