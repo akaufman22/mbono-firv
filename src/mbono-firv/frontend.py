@@ -11,8 +11,6 @@ import numpy as np
 import QuantLib as ql
 import sqlite3
 
-
-
 import dash
 from dash import html, dash_table, dcc
 from dash.html import Div
@@ -25,30 +23,14 @@ from MBONOCurveFit import *
 from models import *
 from ts_stat import *
 
+###Constants
 TENORS = [1, 2, 3, 5, 10, 20, 30]
 BELLY = [2, 3, 5, 10, 20]
 SE = [2, 3, 5]
 LE = [5, 10, 20]
 VALDATE = ql.Date(21, 11, 2022) #should be ql.Date.todaysDate() when live
 
-def get_fit_zscores(fit_data, days = 60, id_type = 'BBGID'):
-    con = sqlite3.connect("../../db/MBONOdata.db")
-    str_ids = '('+str(list(fit_data.index))[1:-1]+')'
-    limit = days * len(fit_data.index)
-    query = """SELECT Instruments.%s, FitData.Date, 
-    FitData.Residual
-    FROM FitData INNER JOIN Instruments
-    ON FitData.InstrumentID = Instruments.InstrumentID
-    WHERE Instruments.%s in %s ORDER BY FitData.Date DESC LIMIT %d;
-    """ %(id_type, id_type, str_ids, limit)
-    aggregate_residuals = pd.read_sql_query(query, con, parse_dates = ['Date'])
-    zscores = pd.Series(index = fit_data.index, dtype = 'float64')
-    for i in fit_data.index:
-        sample = aggregate_residuals[
-            aggregate_residuals[id_type] == i]['Residual']
-        zscores[i] = (fit_data[i] - sample.mean()) / sample.std()
-    return zscores
-
+####Loading Data and calculating metrics
 input_data = pd.read_csv("../../liveprices/MBONOsnapshot.csv", index_col = 0)
 
 model_belly, model_se, model_le = get_updated_models()
@@ -103,6 +85,8 @@ for c in ['PC1', 'PC2', 'PC3']:
         components_stats.loc[m + ' ' + c, 'HE'] = \
             hurst_exponent(time_series.values)
         components_stats.loc[m + ' ' + c, 'HL'] = HL(time_series.values)
+
+###Configuring Charts for Dashboard
 fig_pc1 = go.Figure()
 fig_pc1.add_trace(
     go.Scatter(name = 'Belly',
@@ -358,8 +342,7 @@ fig_pc3.update_layout(
     yaxis_title = 'Factor value',
     margin=dict(l=75, r=5, b=50, t=35))
 
-app = dash.Dash()
-
+###Confiduring tables for Dashboard
 column_settings = [
     dict(id='Name', name='Name', type='text'),
     dict(id='Price', name='Price', type='numeric', 
@@ -387,6 +370,9 @@ stats_settings = [
     dict(id='HL', name='Half life', type='numeric', 
          format=Format(precision=0, scheme=Scheme.fixed))
     ]
+
+###Creating Layout
+app = dash.Dash()
 
 app.layout = html.Div(children = [
     html.H1(children = 'MBONO Market'),
