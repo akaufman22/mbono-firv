@@ -1,7 +1,7 @@
 FIRV
 ======
 
-Relative Value framework for EM local debt
+Relative Value framework for EM local debt. Here is a realisation for Mex Peso denominated government bonds as an example.
 
 Installation
 ------------
