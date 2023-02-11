@@ -1,7 +1,8 @@
 FIRV
 ======
 
-Relative Value framework for EM local debt. Here is a realisation for Mex Peso denominated government bonds as an example.
+Relative Value framework for EM local debt which includes curve builiding, securities rich/cheap analysis, Principal Component Analysis of zero-coupon curve and statistical analysis of selected strategies. Here is a realisation for Mex Peso denominated government bonds as an example. Calculated historical values are stored in sqlite database and live calculations are presented in form of plotly dashboard.
+![](dashboarddemo.gif)
 
 Installation
 ------------
