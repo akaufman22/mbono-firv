@@ -69,7 +69,7 @@ con = sqlite3.connect("../../db/MBONOdata.db")
 query = """SELECT Date, BellyPC1, BellyPC2, BellyPC3, SEPC1, SEPC2, SEPC3,
 LEPC1, LEPC2, LEPC3
 FROM PCLoadings ORDER BY Date DESC LIMIT 2600;"""
-pc_loadings = pd.read_sql_query(query, con, parse_dates=['Date'],
+pc_series = pd.read_sql_query(query, con, parse_dates=['Date'],
                                 index_col='Date')
 
 components_stats = pd.DataFrame(index=[m + ' ' + c for m in models.index
@@ -77,7 +77,7 @@ components_stats = pd.DataFrame(index=[m + ' ' + c for m in models.index
                                 columns=['Zsc', 'ADF p-val', 'HE', 'HL'])
 for c in ['PC1', 'PC2', 'PC3']:
     for m in models.index:
-        time_series = pc_loadings[m + c]
+        time_series = pc_series[m + c]
         components_stats.loc[m + ' ' + c, 'Zsc'] = \
             (models.loc[m, c] - time_series.mean()) / time_series.std()
         components_stats.loc[m + ' ' + c, 'ADF p-val'] = adfuller(
@@ -91,33 +91,33 @@ for c in ['PC1', 'PC2', 'PC3']:
 fig_pc1 = go.Figure()
 fig_pc1.add_trace(
     go.Scatter(name='Belly',
-               x=pc_loadings.index,
-               y=pc_loadings['BellyPC1'],
+               x=pc_series.index,
+               y=pc_series['BellyPC1'],
                line=dict(color='blue')))
 fig_pc1.add_trace(
     go.Scatter(name='Belly live',
-               x=pc_loadings.index,
-               y=[models.loc['Belly', 'PC1']] * len(pc_loadings.index),
+               x=pc_series.index,
+               y=[models.loc['Belly', 'PC1']] * len(pc_series.index),
                line=dict(color='lightblue')))
 fig_pc1.add_trace(
     go.Scatter(name='Short End',
-               x=pc_loadings.index,
-               y=pc_loadings['SEPC1'],
+               x=pc_series.index,
+               y=pc_series['SEPC1'],
                line=dict(color='red')))
 fig_pc1.add_trace(
     go.Scatter(name='Short End live',
-               x=pc_loadings.index,
-               y=[models.loc['SE', 'PC1']] * len(pc_loadings.index),
+               x=pc_series.index,
+               y=[models.loc['SE', 'PC1']] * len(pc_series.index),
                line=dict(color='pink')))
 fig_pc1.add_trace(
     go.Scatter(name='Long End',
-               x=pc_loadings.index,
-               y=pc_loadings['LEPC1'],
+               x=pc_series.index,
+               y=pc_series['LEPC1'],
                line=dict(color='green')))
 fig_pc1.add_trace(
     go.Scatter(name='Lng End  live',
-               x=pc_loadings.index,
-               y=[models.loc['LE', 'PC1']] * len(pc_loadings.index),
+               x=pc_series.index,
+               y=[models.loc['LE', 'PC1']] * len(pc_series.index),
                line=dict(color='lightgreen')))
 fig_pc1.update_layout(
     title_text='1st PC',
@@ -176,33 +176,33 @@ fig_pc1.update_layout(
 fig_pc2 = go.Figure()
 fig_pc2.add_trace(
     go.Scatter(name='Belly',
-               x=pc_loadings.index,
-               y=pc_loadings['BellyPC2'],
+               x=pc_series.index,
+               y=pc_series['BellyPC2'],
                line=dict(color='blue')))
 fig_pc2.add_trace(
     go.Scatter(name='Belly live',
-               x=pc_loadings.index,
-               y=[models.loc['Belly', 'PC2']] * len(pc_loadings.index),
+               x=pc_series.index,
+               y=[models.loc['Belly', 'PC2']] * len(pc_series.index),
                line=dict(color='lightblue')))
 fig_pc2.add_trace(
     go.Scatter(name='Short End',
-               x=pc_loadings.index,
-               y=pc_loadings['SEPC2'],
+               x=pc_series.index,
+               y=pc_series['SEPC2'],
                line=dict(color='red')))
 fig_pc2.add_trace(
     go.Scatter(name='Short End live',
-               x=pc_loadings.index,
-               y=[models.loc['SE', 'PC2']] * len(pc_loadings.index),
+               x=pc_series.index,
+               y=[models.loc['SE', 'PC2']] * len(pc_series.index),
                line=dict(color='pink')))
 fig_pc2.add_trace(
     go.Scatter(name='Long End',
-               x=pc_loadings.index,
-               y=pc_loadings['LEPC2'],
+               x=pc_series.index,
+               y=pc_series['LEPC2'],
                line=dict(color='green')))
 fig_pc2.add_trace(
     go.Scatter(name='Lng End  live',
-               x=pc_loadings.index,
-               y=[models.loc['LE', 'PC2']] * len(pc_loadings.index),
+               x=pc_series.index,
+               y=[models.loc['LE', 'PC2']] * len(pc_series.index),
                line=dict(color='lightgreen')))
 fig_pc2.update_layout(
     title_text='2nd PC',
@@ -261,33 +261,33 @@ fig_pc2.update_layout(
 fig_pc3 = go.Figure()
 fig_pc3.add_trace(
     go.Scatter(name='Belly',
-               x=pc_loadings.index,
-               y=pc_loadings['BellyPC3'],
+               x=pc_series.index,
+               y=pc_series['BellyPC3'],
                line=dict(color='blue')))
 fig_pc3.add_trace(
     go.Scatter(name='Belly live',
-               x=pc_loadings.index,
-               y=[models.loc['Belly', 'PC3']] * len(pc_loadings.index),
+               x=pc_series.index,
+               y=[models.loc['Belly', 'PC3']] * len(pc_series.index),
                line=dict(color='lightblue')))
 fig_pc3.add_trace(
     go.Scatter(name='Short End',
-               x=pc_loadings.index,
-               y=pc_loadings['SEPC3'],
+               x=pc_series.index,
+               y=pc_series['SEPC3'],
                line=dict(color='red')))
 fig_pc3.add_trace(
     go.Scatter(name='Short End live',
-               x=pc_loadings.index,
-               y=[models.loc['SE', 'PC3']] * len(pc_loadings.index),
+               x=pc_series.index,
+               y=[models.loc['SE', 'PC3']] * len(pc_series.index),
                line=dict(color='pink')))
 fig_pc3.add_trace(
     go.Scatter(name='Long End',
-               x=pc_loadings.index,
-               y=pc_loadings['LEPC3'],
+               x=pc_series.index,
+               y=pc_series['LEPC3'],
                line=dict(color='green')))
 fig_pc3.add_trace(
     go.Scatter(name='Lng End  live',
-               x=pc_loadings.index,
-               y=[models.loc['LE', 'PC3']] * len(pc_loadings.index),
+               x=pc_series.index,
+               y=[models.loc['LE', 'PC3']] * len(pc_series.index),
                line=dict(color='lightgreen')))
 fig_pc3.update_layout(
     title_text='3rd PC',

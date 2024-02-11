@@ -20,13 +20,21 @@ def hurst_exponent(data):
     hurst = m[0]*2
     return hurst
 
+def fit_uo_params(x):
+    reg = sm.OLS(x[1:],sm.add_constant(x[:-1])).fit()
+    theta = -np.log(reg.params[1])
+    mu = reg.params[0] / (1 - reg.params[1])
+    sigma_eq = np.std(reg.resid) / np.sqrt((1 - reg.params[1] ** 2))
+    hl = np.log(2) / theta
+    return theta, mu, sigma_eq, hl
 
 def HL(time_series):
-    inc = np.subtract(time_series[1:], time_series[:-1])
-    model = sm.OLS(inc, sm.add_constant(time_series[:-1]))
-    res = model.fit()
-    HL = -np.log(2)/res.params[1]
-    return HL
+    return fit_uo_params(time_series)[3]
+    # inc = np.subtract(time_series[1:], time_series[:-1])
+    # model = sm.OLS(inc, sm.add_constant(time_series[:-1]))
+    # res = model.fit()
+    # HL = -np.log(2)/res.params[1]
+    # return HL
 
 
 def get_fit_zscores(fit_data, days=60, id_type='BBGID'):
