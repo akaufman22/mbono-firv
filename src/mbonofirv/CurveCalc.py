@@ -42,8 +42,8 @@ def define_ql_bonds(instrument_ids, id_type='BBGID'):
                                              schedule, coupons, DAY_COUNT))
     return bonds_sample
 
-def define_ql_bonds_bulk(instrument_ids, id_type='BBGID'):
-    con = sqlite3.connect("../../db/MBONOdata.db")
+def define_ql_bonds_bulk(instrument_ids, id_type='BBGID', db_path='../../db/MBONOdata.db'):
+    con = sqlite3.connect(db_path)
     str_ids = '('+str(instrument_ids)[1:-1]+')'
     bonds_sample = []
     query = """SELECT Instruments.%s, StaticSchedules.Date,

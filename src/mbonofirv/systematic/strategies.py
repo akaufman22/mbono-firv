@@ -7,7 +7,7 @@ from tqdm import tqdm
 class SystematicStrategy():
     
     def __init__ (self, strategy, instrument_universe, market_data, zc_curves,
-                  rebal_threshold=0, trading_threshold=0, time_slippage=1, fit_resid=None,
+                  rebal_threshold=0, trading_threshold=0, time_slippage=0, fit_resid=None,
                   rebal_rule='vol', calendar=ql.Mexico(), day_count=ql.Actual360(),
                   settlement_days=2, yield_basis=ql.Semiannual):
         self.strategy = strategy
@@ -16,6 +16,7 @@ class SystematicStrategy():
         self.zc_curves = zc_curves
         self.rebal_threshold = rebal_threshold
         self.trading_threshold = trading_threshold
+        self.time_slippage = time_slippage
         self.tenors = self.zc_curves.columns
         self.tenors_years = [int(s[1:]) for s in self.tenors]
         self.fit_resid = fit_resid
@@ -86,9 +87,10 @@ class SystematicStrategy():
         df_risk.loc[d] = self.estimate_risk(df_position.loc[d], d, spot_curve_handle)
         for i in tqdm(range(1, len(target_risk.index))):
             d = target_risk.index[i]
+            d_signal = target_risk.index[i-self.time_slippage]
             spot_curve_handle = self.get_ql_obj(d)
             df_position.loc[d] = df_position.shift(1).loc[d]
-            target_order = self.rebalance_order(df_position.loc[d], target_risk.loc[d], d, spot_curve_handle)
+            target_order = self.rebalance_order(df_position.loc[d], target_risk.loc[d_signal], d, spot_curve_handle)
             df_trades.loc[d, target_order.index] = target_order * (target_order.abs() > min_lot)
             df_position.loc[d] += df_trades.loc[d]
             current_risk = self.estimate_risk(df_position.loc[d], d, spot_curve_handle)
@@ -145,6 +147,63 @@ class SystematicStrategy():
         self.dirty_prices = df_dirty_prices
         self.tcosts_all = df_tcosts
         return self.pnl.sum(axis=1)
+
+def trading_order(instruments, date, risk_to_trade, spot_curve_handle, curve_tenors_years,
+                  fit_data=None, fit_threshold=0.01, maturity_band=0.2):
+    ql_date = ql.Date(date.day, date.month, date.year)
+    ql.Settings.instance().evaluationDate = ql_date
+    curve_tenors = ['Y'+str(t) for t in curve_tenors_years]
+    sensitivities = instruments[instruments['PricingDate'] < date].copy()
+    for i in sensitivities.index:
+        bond = sensitivities.loc[i, 'QL bond']
+        sensitivities.loc[i, curve_tenors] = bond_sensitivities(bond, date, spot_curve_handle, curve_tenors_years)
+    risk = pd.Series(index= curve_tenors, data=0)
+    risk.loc[risk_to_trade.index] = risk_to_trade
+    if fit_data is not None:
+        benchmarks = []
+        to_keep = fit_data[fit_data.abs() <= fit_threshold].index
+        sensitivities = sensitivities.loc[to_keep.intersection(sensitivities.index)]
+        for t in curve_tenors:
+            years = int(t[1:])
+            tenor_date = date + pd.tseries.offsets.DateOffset(years=years)
+            mask = (abs((sensitivities['Maturity'] - tenor_date).dt.days) < maturity_band*years*365)
+            subuniverse = sensitivities.loc[mask]
+            candidates = list(subuniverse.index)
+            if len(candidates) == 0:
+                benchmarks.append(sensitivities[t].abs().idxmax())
+            else:
+                benchmarks.append((np.sign(risk_to_trade[t]) * fit_data[candidates]).idxmin())
+        benchmarks = list(set(benchmarks))
+    else:
+        benchmarks = list(set([sensitivities[t].abs().idxmax() for t in curve_tenors]))
+    order = pd.Series(index = benchmarks,
+                    data=100 * np.linalg.lstsq(sensitivities.loc[benchmarks, curve_tenors].to_numpy().T, risk.to_numpy(), rcond=None)[0])
+    return order
+
+def portfolio_risk(instruments, date, portfolio, spot_curve_handle, tenors_years):
+    risk = np.array([0.0] * len(tenors_years))
+    for i in portfolio.index:
+        bond = instruments.loc[i, 'QL bond']
+        risk += bond_sensitivities(bond, date, spot_curve_handle, tenors_years) * portfolio.loc[i] / 100
+    return risk
+
+def bond_sensitivities(bond, date, spot_curve_handle, tenors_years):
+    ql_date = ql.Date(date.day, date.month, date.year)
+    ql.Settings.instance().evaluationDate = ql_date
+    bumps = [ql.SimpleQuote(0.00) for n in ([0] + tenors_years)]
+    spreads = [ql.QuoteHandle(bump) for bump in bumps]
+    spot_dates = [ql_date + ql.Period(int(t), ql.Years) for t in ([0] + tenors_years)]
+    spreaded_yts = ql.YieldTermStructureHandle(
+        ql.SpreadedLinearZeroInterpolatedTermStructure(spot_curve_handle, spreads, spot_dates))
+    spreaded_yts.enableExtrapolation()
+    bond.setPricingEngine(ql.DiscountingBondEngine(spreaded_yts))
+    price = bond.cleanPrice()
+    senstivities = []
+    for bump in bumps[1:]:
+        bump.setValue(0.0001)
+        senstivities.append(bond.cleanPrice() - price)
+        bump.setValue(0.00)
+    return np.array(senstivities)
 
 def trading_order(instruments, date, risk_to_trade, spot_curve_handle, curve_tenors_years,
                   fit_data=None, fit_threshold=0.01, maturity_band=0.2):

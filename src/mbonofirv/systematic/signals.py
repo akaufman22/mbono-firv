@@ -92,5 +92,3 @@ def discretise_signal(z_scores, ol=-2, cl=-1, os=2, cs=1):
             np.where((z_scores.iloc[i] < cl) & (position.iloc[i-1] == 1), 1,
             np.where((z_scores.iloc[i] > cs) & (position.iloc[i-1] == -1), -1, 0))))
     return position
-
-

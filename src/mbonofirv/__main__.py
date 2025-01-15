@@ -1,4 +1,4 @@
-import mbono-firv
+import mbonofirv
 
 if __name__ == '__main__':
     pass
