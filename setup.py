@@ -7,7 +7,7 @@ scriptFolder = os.path.dirname(os.path.realpath(__file__))
 os.chdir(scriptFolder)
 
 # Find version info from module (without importing the module):
-with open("src/mbono-firv/__init__.py", "r") as fileObj:
+with open("src/mbonofirv/__init__.py", "r") as fileObj:
     version = re.search(
         r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]', fileObj.read(), re.MULTILINE
     ).group(1)

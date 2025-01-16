@@ -6,7 +6,7 @@ from tqdm import tqdm
 
 
 class MeanReversionSignal():
-    
+   
     def __init__(self, tenors, weights, time_series, mu, sigma):
         self.tenors = tenors
         self.weights = weights.flatten()
