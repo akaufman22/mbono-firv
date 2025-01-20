@@ -7,12 +7,13 @@ Relative Value framework for EM local debt which includes curve building, securi
 Systematic Trading Strategy
 ---------------------------
 
-The FIRV framework includes a systematic trading strategy module that allows users to backtest and implement trading strategies based on the relative value analysis. This module provides tools to:
+Brief summary for the strategy is [here](./Summary.pdf). The FIRV framework includes a systematic trading strategy module that allows users to backtest and implement trading strategies based on the relative value analysis. This module provides tools to:
 
 - Define trading rules and signals based on the rich/cheap analysis.
 - Backtest strategies using historical data stored in the sqlite database.
 - Evaluate the performance of strategies using various metrics such as Sharpe ratio, drawdown, and cumulative returns.
 - Visualize the results of the backtest using interactive plots.
+
 ![Strategy Performance](output.png)
 
 Installation
