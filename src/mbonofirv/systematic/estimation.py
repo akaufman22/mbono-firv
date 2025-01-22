@@ -2,28 +2,6 @@
 This module provides functions for estimating butterfly and spread weights based on PCA of zero curves,
 fitting Ornstein-Uhlenbeck parameters, loading historical data, generating trading signals, and plotting
 strategy performance statistics.
-
-Functions:
-    get_pca_bf_weights(zc_data):
-        Estimates butterfly weights based on PCA of zero curve data.
-
-    get_pca_spread_weights(zc_data):
-        Estimates spread weights based on PCA of zero curve data.
-
-    fit_ou_params(x):
-        Estimates Ornstein-Uhlenbeck parameters from a time series.
-
-    load_historical_data(db_path="./db/MBONOdata.db", generate_ql_objects=True, print_head=False):
-        Loads historical data from a database and returns zero curve data, instrument data, price data, and fit data.
-
-    generate_triplet_signals(df_zc, tenors, lookback_years, test_years, p_val_crit, hl_crit, sigma_crit, z_ol, z_cl, z_os, z_cs):
-        Generates trading signals based on PCA of triplet tenors and mean reversion strategy.
-
-    generate_spread_signals(df_zc, tenors, lookback_years, test_years, p_val_crit, hl_crit, sigma_crit, z_ol, z_cl, z_os, z_cs):
-        Generates trading signals based on PCA of spread tenors and mean reversion strategy.
-
-    plot_stats(total_pnl, trading):
-        Plots strategy performance statistics and returns a DataFrame with calculated statistics.
 """
 import sqlite3
 from math import log, sqrt
@@ -39,16 +17,9 @@ from statsmodels.tsa.stattools import adfuller
 from tqdm import tqdm
 
 
-#Fubnction for estimating buttefly weights based on PCA of zero curve
 def get_pca_bf_weights(zc_data):
     """
     Estimates butterfly weights based on PCA of zero curve data.
-
-    Parameters:
-    zc_data (pd.DataFrame): Zero curve data.
-
-    Returns:
-    np.ndarray: Butterfly weights.
     """
     cov = zc_data.cov()
     eig_vals, eig_vecs = np.linalg.eig(cov)
@@ -61,6 +32,9 @@ def get_pca_bf_weights(zc_data):
     return bf_weights
 
 def get_pca_spread_weights(zc_data):
+    """
+    Estimates spread weights based on PCA of zero curve data.
+    """
     cov = zc_data.cov()
     eig_vals, eig_vecs = np.linalg.eig(cov)
     permutation = np.argsort(-eig_vals)
@@ -71,8 +45,10 @@ def get_pca_spread_weights(zc_data):
     spread_weights = np.linalg.inv(A) @ np.array([[0], [1]])
     return spread_weights
 
-#Estimating Ornstein-Uhlenbeck parameters
 def fit_ou_params(x):
+    """
+    Fits Ornstein-Uhlenbeck parameters to a time series.
+    """
     reg = sm.OLS(x[1:],sm.add_constant(x[:-1])).fit()
     theta = -log(reg.params[1])
     mu = reg.params[0] / (1 - reg.params[1])
@@ -81,6 +57,9 @@ def fit_ou_params(x):
     return theta, mu, sigma_eq, hl
 
 def load_historical_data (db_path="./db/MBONOdata.db", generate_ql_objects=True, print_head=False):
+    """
+    Loads historical data from the database.
+    """
     df_zc = pd.read_parquet('./db/zerocurve.parquet')
     con = sqlite3.connect(db_path)
     query = """SELECT DISTINCT BBGId, InstrumentID, Maturity, PricingDate from Instruments WHERE Maturity > 2010-01-01;"""
@@ -111,6 +90,9 @@ def load_historical_data (db_path="./db/MBONOdata.db", generate_ql_objects=True,
 def generate_triplet_signals(df_zc, tenors, lookback_years, test_years,
                      p_val_crit, hl_crit, sigma_crit,
                      z_ol, z_cl, z_os, z_cs):
+    """
+    Generates mean reversion signals based on PCA of zero curves.
+    """
     eoy = pd.date_range(end=df_zc.index[-1], start = df_zc.index[0], freq='BY')
     pca_strategies = []
     for i in tqdm(range(lookback_years-1, len(eoy), 1)):
@@ -137,6 +119,9 @@ def generate_triplet_signals(df_zc, tenors, lookback_years, test_years,
 def generate_spread_signals(df_zc, tenors, lookback_years, test_years,
                      p_val_crit, hl_crit, sigma_crit,
                      z_ol, z_cl, z_os, z_cs):
+    """
+    Generates mean reversion signals based on PCA of zero curves.
+    """
     eoy = pd.date_range(end=df_zc.index[-1], start = df_zc.index[0], freq='BY')
     pca_spread_strategies = []
     for i in tqdm(range(lookback_years-1, len(eoy), 1)):
@@ -160,6 +145,9 @@ def generate_spread_signals(df_zc, tenors, lookback_years, test_years,
     return pca_spread_strategies
 
 def plot_stats(total_pnl, trading):
+    """
+    Plots strategy performance statistics.
+    """
     strat_stats = ['Avg GMV, $', 'Avg Ann PNL, $', 'Ann Std Dev, $', 'Return on GMV, %',
                 'Daily Turnover Ratio, %',
                 'Sharpe Ratio', 'Sortino Ratio', 'Max Drawdown, $', '1D VaR (95%), $']

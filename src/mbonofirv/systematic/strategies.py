@@ -5,6 +5,9 @@ import QuantLib as ql
 from tqdm import tqdm
 
 class SystematicStrategy():
+    """
+    Systematic Strategy Class
+    """
     
     def __init__ (self, strategy, instrument_universe, market_data, zc_curves,
                   rebal_threshold=0, trading_threshold=0, time_slippage=0, fit_resid=None,
@@ -27,6 +30,9 @@ class SystematicStrategy():
         self.yield_basis = yield_basis
         
     def get_ql_obj(self, date):
+        """
+        Get QuantLib Zero Curve Object from zero curve data
+        """
         ql_date = ql.Date(date.day, date.month, date.year)
         ql.Settings.instance().evaluationDate = ql_date
         zero_curve = self.zc_curves.loc[date]
@@ -37,12 +43,18 @@ class SystematicStrategy():
         return spot_curve_handle
 
     def estimate_risk(self, position, date, spot_curve_handle):
+        """
+        Estimate Portfolio Risk for actual position
+        """
         risk = pd.Series(index=self.tenors,
                          data=portfolio_risk(self.instrument_universe, date, position, spot_curve_handle,
                               self.tenors_years))
         return risk
     
     def order_to_open(self, date, risk, ql_curve_handle):
+        """
+        Generate Trading Order to Open Position for a given risk target
+        """
         if self.fit_resid is None:
             fit_data = None
         else:
@@ -52,6 +64,9 @@ class SystematicStrategy():
         return order    
     
     def rebalance_order(self, position, target_risk, date, spot_curve_handle):
+        """
+        Generate Trading Order to Rebalance Position for a given risk target
+        """
         position_risk = self.estimate_risk(position, date, spot_curve_handle)
         tracking_error = position_risk - target_risk
         d2 = date + pd.tseries.offsets.DateOffset(days=-1)
@@ -70,6 +85,9 @@ class SystematicStrategy():
         return order
     
     def calc_position(self, min_lot=0):
+        """
+        Calculate Position for the Strategy
+        """
         print('Calculating Position')
         if self.strategy.target_risk is None:
             self.strategy.estimate_target_risk()
@@ -101,6 +119,9 @@ class SystematicStrategy():
         return self.position, self.risk, self.trades
         
     def calc_total_pnl(self, tcosts=0):
+        """
+        Calculate Total PnL for the Strategy
+        """
         self.tcosts = tcosts
         repo_rates = self.zc_curves.loc[self.position.index, ['Y1']]
         index_name = self.position.index.name
@@ -150,6 +171,9 @@ class SystematicStrategy():
 
 def trading_order(instruments, date, risk_to_trade, spot_curve_handle, curve_tenors_years,
                   fit_data=None, fit_threshold=0.01, maturity_band=0.2):
+    """
+    Translate Risk needed to rebalance into Trading Order
+    """
     ql_date = ql.Date(date.day, date.month, date.year)
     ql.Settings.instance().evaluationDate = ql_date
     curve_tenors = ['Y'+str(t) for t in curve_tenors_years]
@@ -181,6 +205,9 @@ def trading_order(instruments, date, risk_to_trade, spot_curve_handle, curve_ten
     return order
 
 def portfolio_risk(instruments, date, portfolio, spot_curve_handle, tenors_years):
+    """
+    Calculate Portfolio Risk for a given position
+    """
     risk = np.array([0.0] * len(tenors_years))
     for i in portfolio.index:
         bond = instruments.loc[i, 'QL bond']
@@ -188,6 +215,9 @@ def portfolio_risk(instruments, date, portfolio, spot_curve_handle, tenors_years
     return risk
 
 def bond_sensitivities(bond, date, spot_curve_handle, tenors_years):
+    """
+    Calculate Bond Sensitivities to Zero Curve via 1bp bump
+    """
     ql_date = ql.Date(date.day, date.month, date.year)
     ql.Settings.instance().evaluationDate = ql_date
     bumps = [ql.SimpleQuote(0.00) for n in ([0] + tenors_years)]

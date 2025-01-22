@@ -6,6 +6,9 @@ from tqdm import tqdm
 
 
 class MeanReversionSignal():
+    """
+    Class for mean reversion signals
+    """
    
     def __init__(self, tenors, weights, time_series, mu, sigma):
         self.tenors = tenors
@@ -16,6 +19,14 @@ class MeanReversionSignal():
         self.target_risk = None
         
     def set_trading_rule(self, ol=-2, cl=-1, os=2, cs=1, ts=30):
+        """
+        Set trading rule for the signal:
+        ol: open long
+        cl: close long
+        os: open short
+        cs: close short
+        ts: time stop
+        """
         self.open_long = ol
         self.close_long = cl
         self.open_short = os
@@ -24,6 +35,9 @@ class MeanReversionSignal():
         return self
     
     def estimate_target_risk(self):
+        """
+        Estimate target risk based on the trading rule
+        """
         signal = (self.time_series - self.mu)/self.sigma
         discrete_signal = discretise_signal(signal, self.open_long, self.close_long, self.open_short, self.close_short)
         target_risk= np.repeat(self.weights.reshape(1,-1), len(signal), axis=0) * discrete_signal.to_numpy().reshape(-1,1)
@@ -37,7 +51,9 @@ class MeanReversionSignal():
         return pnl
     
 class AggregatedSignal():
-    
+    """
+    Class for aggregated signals
+    """
     def __init__(self, strategies, weights=None, dates=None):
         self.strategies = strategies
         if weights is None:
@@ -48,6 +64,9 @@ class AggregatedSignal():
         self.dates = dates
 
     def estimate_target_risk(self):
+        """
+        Estimate target risk based on the aggregated signals
+        """
         print('Aggregating Signals')
         if self.strategies[0].target_risk is None:
             self.strategies[0].estimate_target_risk()
@@ -69,6 +88,9 @@ class AggregatedSignal():
         return pnl
     
     def set_target_volatility(self, target_volatility, zc_curves):
+        """
+        Adjust target risk to achieve target volatility
+        """
         print('Setting Target Volatility')
         if self.target_risk is None:
             self.get_target_risk()
@@ -85,6 +107,9 @@ class AggregatedSignal():
         return self
     
 def discretise_signal(z_scores, ol=-2, cl=-1, os=2, cs=1):
+    """
+    Translates z-scores into discrete trading signals
+    """
     position = pd.Series(0, index=z_scores.index)
     position.iloc[0] = np.where(z_scores.iloc[0] <= ol, 1, np.where(z_scores.iloc[0] >= os, -1, 0))
     for i in range(1, len(z_scores.index)):
