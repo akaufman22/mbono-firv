@@ -11,6 +11,9 @@ from .CurveCalc import *
 
 
 class MBONOCurveFit():
+    """
+    Class to fit a curve to a set of bonds and provide a valuation
+    """
 
     def __init__(self, market_data, date=ql.Date.todaysDate(),
                  id_type='BBGID', min_days=270, outlier_range=0.001):

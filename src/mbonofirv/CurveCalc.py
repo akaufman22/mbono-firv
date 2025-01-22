@@ -43,6 +43,10 @@ def define_ql_bonds(instrument_ids, id_type='BBGID'):
     return bonds_sample
 
 def define_ql_bonds_bulk(instrument_ids, id_type='BBGID', db_path='../../db/MBONOdata.db'):
+    """
+    Define a list of QuantLib FixedRateBond objects from a list of instrument ids
+    and a database path. The database should contain the tables Instruments and
+    StaticSchedules with the corresponding fields."""
     con = sqlite3.connect(db_path)
     str_ids = '('+str(instrument_ids)[1:-1]+')'
     bonds_sample = []
@@ -71,6 +75,9 @@ def define_ql_bonds_bulk(instrument_ids, id_type='BBGID', db_path='../../db/MBON
 def fitted_ql_curve(bonds_sample, prices,
                     valuation_date=ql.Date.todaysDate(),
                     curve_fitting=ql.SvenssonFitting()):
+    """ Fit a QuantLib curve to a set of bonds and prices. The curve fitting
+    method is specified by the curve_fitting argument. The valuation date is
+    used to calculate the settlement date of the bonds."""
     settlement_date = CALENDAR.advance(valuation_date,
                                        ql.Period(SETTLEMENT_DAYS, ql.Days))
     bond_helpers = []
@@ -84,6 +91,9 @@ def fitted_ql_curve(bonds_sample, prices,
 
 def mbono_market_snapshot(df_input, valuation_date=ql.Date.todaysDate(),
                           id_type='BBGID'):
+    """ Obtain a snapshot of the market for a list of instruments. The
+    instruments are identified by the id_type argument. The valuation date
+    is used to calculate the settlement date of the bonds."""
     df_output = df_input.copy()
     instrument_ids = list(df_input.index)
     str_ids = '('+str(instrument_ids)[1:-1]+')'
@@ -109,6 +119,8 @@ def mbono_market_snapshot(df_input, valuation_date=ql.Date.todaysDate(),
 
 
 def fit_to_data(df_input, valuation_date=ql.Date.todaysDate()):
+    """ Fit a curve to a dataframe of bond prices. The dataframe should have
+    columns 'Price' and 'QL bond' with the bond prices and QuantLib bond"""
     prices = list(df_input['Price'])
     bonds_sample = list(df_input['QL bond'])
     yield_curve_fit = fitted_ql_curve(bonds_sample, prices,
@@ -119,6 +131,9 @@ def fit_to_data(df_input, valuation_date=ql.Date.todaysDate()):
 
 def evaluate_bonds(df_input, yield_curve_fit,
                    valuation_date=ql.Date.todaysDate()):
+    """ Evaluate a dataframe of bond prices with a given curve. The dataframe
+    should have columns 'Price' and 'QL bond' with the bond prices and
+    QuantLib bond"""
     df_output = df_input.copy()
     ql.Settings.instance().evaluationDate = valuation_date
     settlement_date = CALENDAR.advance(valuation_date,
@@ -140,6 +155,9 @@ def evaluate_bonds(df_input, yield_curve_fit,
 
 def clean_fit(df_input, valuation_date=ql.Date.todaysDate(), min_days=270,
               outlier_range=0.001):
+    """ Clean a dataframe of bond prices and fit a curve to the remaining
+    data. The dataframe should have columns 'Price' and 'QL bond' with the
+    bond prices and QuantLib bond"""
     df_input = df_input[(df_input['PricingDate'].apply(
         ql.Date().from_date) - valuation_date) < 0].copy()
     df_input = df_input[(df_input['Maturity'].apply(
@@ -168,6 +186,9 @@ def clean_fit(df_input, valuation_date=ql.Date.todaysDate(), min_days=270,
 def zero_df_curve(yield_curve, tenors,
                   day_count=ql.Actual365Fixed(),
                   compounding=ql.Continuous):
+    """ Create a dataframe with the zero rates of a yield curve for a set of
+    tenors. The day_count and compounding arguments are used to calculate the
+    zero rates."""
     zero_curve = pd.DataFrame(index=[str(i)+'Y' for i in tenors],
                               columns=['Date', 'Rate', 'Years'])
     ref_date = yield_curve.referenceDate()

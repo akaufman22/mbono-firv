@@ -1,9 +1,9 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
-Created on Mon Dec  5 14:37:17 2022
-
-@author: alex
+This script creates a dashboard for the MBONO market. It uses the Dash library
+to create a web application that displays the current market data for MBONOs,
+including the yield curve, individual issues, and principal components analysis
+of the yield curve. The dashboard is updated in real-time using data from the
+MBONO database and the MBONOCurveFit class.
 """
 
 import pandas as pd
