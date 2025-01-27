@@ -3,18 +3,20 @@ This module provides functions for estimating butterfly and spread weights based
 fitting Ornstein-Uhlenbeck parameters, loading historical data, generating trading signals, and plotting
 strategy performance statistics.
 """
-import sqlite3
+
 from math import log, sqrt
 
-import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
-import numpy as np
 import pandas as pd
+import numpy as np
+import sqlite3
+import matplotlib.pyplot as plt
+from matplotlib import ticker
 import statsmodels.api as sm
-from src.mbonofirv.CurveCalc import define_ql_bonds_bulk
-from src.mbonofirv.systematic.signals import MeanReversionSignal
 from statsmodels.tsa.stattools import adfuller
 from tqdm import tqdm
+
+from src.mbonofirv.curvemath import define_ql_bonds_bulk
+from src.mbonofirv.systematic.signals import MeanReversionSignal
 
 
 def get_pca_bf_weights(zc_data):

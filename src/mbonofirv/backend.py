@@ -6,7 +6,7 @@ Created on Mon Dec  5 09:13:27 2022
 @author: alex
 """
 
-from MBONOCurveFit import *
+from curvefit import MBONOCurveFit
 
 import pandas as pd
 import QuantLib as ql

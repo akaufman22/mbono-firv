@@ -17,9 +17,9 @@ from dash.dash_table.Format import Format, Scheme
 import plotly.graph_objs as go
 from statsmodels.tsa.stattools import adfuller
 
-from MBONOCurveFit import *
+from curvefit import MBONOCurveFit
 from models import *
-from ts_stat import *
+from tstats import *
 
 # Constants###
 ###############

@@ -7,7 +7,7 @@ Created on Thu Dec  1 15:14:11 2022
 """
 import QuantLib as ql
 
-from CurveCalc import *
+from curvemath import *
 
 
 class MBONOCurveFit():
