@@ -27,7 +27,7 @@ TENORS = [1, 2, 3, 5, 10, 20, 30]
 BELLY = [2, 3, 5, 10, 20]
 SE = [2, 3, 5]
 LE = [5, 10, 20]
-VALDATE = ql.Date(21, 11, 2022)  # should be ql.Date.todaysDate() when live
+VALDATE = ql.Date(24, 1, 2025)  # should be ql.Date.todaysDate() when live
 
 # Loading Data and calculating metrics###
 ##########################################
@@ -382,7 +382,7 @@ app.layout = html.Div(children=[
     html.Div([html.H4('Individual Issues Rich/Cheap'),
               dash_table.DataTable(id='live-market-table',
                                    columns=column_settings,
-                                   data=fit_table.to_dict('rows'),
+                                   data=fit_table.to_dict(orient='records'),
                                    style_data_conditional=[{'if': {
                                        'filter_query': '{Difference} > 4.5',
                                        'column_id': 'Difference'},
@@ -420,17 +420,18 @@ app.layout = html.Div(children=[
                         legend=dict(orientation='h'),
                         margin=dict(l=75, r=5, b=50, t=35),
                         height=300)})]),
-        html.Div([
-            html.H4('Spot Zero Coupon Curve Rich/Cheap'),
-            dash_table.DataTable(
-                id='zero-curve',
-                columns=[dict(id='index', name='', type='text')] +
-                [dict(id=i, name=i, type='numeric',
+        ]), dcc.Tab(label='Tenors Rich/Cheap', children=[
+            html.H4('Curve Tenors Residuals from PCA Model'),    
+                html.Div([
+                    dash_table.DataTable(
+                    id='zero-curve',
+                    columns=[dict(id='index', name='', type='text')] +
+                    [dict(id=i, name=i, type='numeric',
                       format=Format(precision=2,
                                     scheme=Scheme.percentage))
                  for i in curve_table.columns],
-                data=curve_table.reset_index().to_dict('rows'))])
-        ]), dcc.Tab(label='Charts', children=[
+                data=curve_table.reset_index().to_dict(orient='records'),)])]),
+            dcc.Tab(label='Charts', children=[
                 dcc.Graph(id='1st', figure=fig_pc1),
                 dcc.Graph(id='2nd', figure=fig_pc2),
                 dcc.Graph(id='3rd', figure=fig_pc3)]),
@@ -440,7 +441,7 @@ app.layout = html.Div(children=[
                      dash_table.DataTable(
                          id='stats',
                          columns=stats_settings,
-                         data=components_stats.reset_index().to_dict('rows'),
+                         data=components_stats.reset_index().to_dict(orient='records'),
                          style_data_conditional=[
                              {'if': {
                                  'filter_query': '{Zsc} > 1.5',
