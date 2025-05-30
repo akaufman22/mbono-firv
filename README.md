@@ -14,7 +14,7 @@ Brief summary for the strategy is [here](./Summary.pdf). The FIRV framework incl
 - Evaluate the performance of strategies using various metrics such as Sharpe ratio, drawdown, and cumulative returns.
 - Visualize the results of the backtest using interactive plots.
 
-[Notebook with the backtest](./backtest.ipynb)
+[Notebook with the backtest](./Backtest.ipynb)
 
 [Comparison of trade construction methods](./SystematicButterflyTrading.ipynb)
 
